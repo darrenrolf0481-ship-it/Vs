@@ -1,0 +1,17 @@
+{
+  "name": "vs-code-web-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local backend for the VS Code Web clone: real filesystem access + real shell over WebSocket",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "cors": "^2.8.5",
+    "ws": "^8.18.0"
+  }
+}
