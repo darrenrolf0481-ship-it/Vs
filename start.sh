@@ -42,22 +42,48 @@ BACK_PID=$!
 
 # Wait for the backend to actually answer before starting the UI, so the
 # editor doesn't load in "demo" mode and make you think it's broken.
-# curl isn't installed by default on some systems (e.g. a bare Termux), so
-# fall back to a fixed pause rather than failing outright.
-if command -v curl >/dev/null 2>&1; then
-  for i in $(seq 1 30); do
-    if curl -sf "http://127.0.0.1:${BACKEND_PORT}/api/health" >/dev/null 2>&1; then
-      echo "Backend is up."
-      break
-    fi
-    if [ "$i" -eq 30 ]; then
-      echo "Backend did not start in time — check the output above."
-    fi
-    sleep 0.5
-  done
-else
-  echo "(curl not found — waiting a few seconds for the backend)"
-  sleep 4
+# Probe with node rather than curl: curl isn't installed everywhere, and the
+# old fallback (a blind sleep) reported success without checking anything.
+# node is by definition present — it's what runs the server.
+backend_is_up() {
+  node -e '
+    const port = process.argv[1];
+    const req = require("http").get(
+      { host: "127.0.0.1", port, path: "/api/health", timeout: 1500 },
+      (res) => process.exit(res.statusCode === 200 ? 0 : 1)
+    );
+    req.on("error", () => process.exit(1));
+    req.on("timeout", () => { req.destroy(); process.exit(1); });
+  ' "$BACKEND_PORT" >/dev/null 2>&1
+}
+
+backend_ready=""
+for _ in $(seq 1 30); do
+  if backend_is_up; then
+    backend_ready="yes"
+    echo "Backend is up."
+    break
+  fi
+  sleep 0.5
+done
+
+# Stop here rather than starting the UI anyway. Launching the frontend on a
+# dead backend drops you into "demo" mode, where files aren't saved to disk
+# and the terminal just says "disconnected" — and its startup banner scrolls
+# the backend's actual error off the screen, which is the single most
+# confusing way this can fail.
+if [ -z "$backend_ready" ]; then
+  echo ""
+  echo "  The backend did not come up on port ${BACKEND_PORT}."
+  echo "  Its error is printed above — that message is the real problem."
+  echo ""
+  echo "  Not starting the frontend, because without a backend the editor"
+  echo "  runs in demo mode: nothing is saved to disk and the terminal will"
+  echo "  not connect."
+  echo ""
+  echo "  To see the failure on its own:  cd server && npm start"
+  echo ""
+  exit 1
 fi
 
 echo "Starting frontend..."
