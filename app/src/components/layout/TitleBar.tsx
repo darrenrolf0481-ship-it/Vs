@@ -200,7 +200,7 @@ export function TitleBar() {
 
   return (
     <div className="vscode-titlebar" style={{ justifyContent: 'space-between' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <div className="titlebar-menus" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
         {/* VS Code: Icon */}
         <div style={{ display: 'flex', alignItems: 'center', marginRight: 8 }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -277,7 +277,10 @@ export function TitleBar() {
       </div>
 
       {/* Window Title */}
-      <div style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', pointerEvents: 'none' }}>
+      <div
+        className="titlebar-window-title"
+        style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', pointerEvents: 'none' }}
+      >
         VS Code: Web — workspace
       </div>
 

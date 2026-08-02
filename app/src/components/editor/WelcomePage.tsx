@@ -79,7 +79,9 @@ export function WelcomePage() {
 
       <div style={{
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
+        // Two columns don't fit a phone; auto-fit collapses to one instead of
+        // pushing the Walkthroughs column off the side of the screen.
+        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
         gap: 32,
         maxWidth: 700,
         width: '100%',

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useAppStore } from '@/store';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { FileNode } from '@/types';
 import {
   FileCode, FileJson, FileText, FolderClosed, FolderOpen,
@@ -22,8 +23,20 @@ function getFileIcon(name: string) {
 function TreeNodeItem({ node, depth = 0 }: { node: FileNode; depth?: number }) {
   const {
     activeTabId, editorTabs, openFile, toggleFolder,
-    deleteNode, renameNode, createFile, createFolder,
+    deleteNode, renameNode, createFile, createFolder, toggleSidebar,
   } = useAppStore();
+
+  const isMobile = useIsMobile();
+
+  // On a phone the sidebar is an overlay sitting on top of the editor, so
+  // opening a file otherwise drops you back on a screen that still shows the
+  // file list, with the file you just picked hidden behind it. Dismiss the
+  // drawer so you actually land on what you opened. On desktop the sidebar
+  // is a pane beside the editor, so it stays put.
+  const handleOpenFile = useCallback((n: FileNode) => {
+    openFile(n);
+    if (isMobile) toggleSidebar();
+  }, [openFile, isMobile, toggleSidebar]);
 
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [renaming, setRenaming] = useState(false);
@@ -168,7 +181,7 @@ function TreeNodeItem({ node, depth = 0 }: { node: FileNode; depth?: number }) {
       <div
         className={`vscode-tree-item ${isActive ? 'active' : ''}`}
         style={{ paddingLeft: 8 + depth * 16 }}
-        onClick={() => openFile(node)}
+        onClick={() => handleOpenFile(node)}
         onContextMenu={handleContextMenu}
       >
         <span style={{ width: 14, display: 'inline-block' }} />

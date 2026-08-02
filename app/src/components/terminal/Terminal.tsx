@@ -30,12 +30,13 @@ export function TerminalPanel() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* Panel Tabs */}
-      <div style={{
+      <div className="panel-tab-row" style={{
         display: 'flex',
         alignItems: 'center',
         background: '#252526',
         borderBottom: '1px solid #3e3e42',
         height: 35,
+        minHeight: 35,
         paddingLeft: 8,
       }}>
         {[

@@ -377,6 +377,37 @@
     background: var(--vscode-accent);
   }
 
+  /* At phone width the menu bar (File…Help) is wider than the screen, and the
+     window title is absolutely centred on top of it — the two paint over each
+     other as unreadable overlapping text. Drop the decorative title, which
+     duplicates what the Explorer header and breadcrumb already show, and let
+     the menus scroll sideways so every one stays reachable. */
+  @media (max-width: 767px) {
+    .titlebar-window-title {
+      display: none;
+    }
+
+    .titlebar-menus {
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .titlebar-menus::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Same problem in the panel: Terminal/Problems/Output/Debug Console plus
+       the shell tabs don't fit, and clipping them hides the tab controls. */
+    .panel-tab-row {
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .panel-tab-row::-webkit-scrollbar {
+      display: none;
+    }
+  }
+
   /* Mobile sidebar: slide-over drawer instead of a permanent inline pane */
   .vscode-sidebar-mobile {
     position: fixed;
@@ -398,7 +429,12 @@
     position: fixed;
     top: 30px;
     bottom: 22px;
-    left: 0;
+    /* Stop at the activity bar rather than covering it. The drawer already
+       starts at 48px for the same reason: the icons stay visible, so they
+       must stay tappable. Spanning from 0 made every view switch take two
+       taps — one swallowed by the backdrop to close the drawer, one to
+       actually hit the icon. */
+    left: 48px;
     right: 0;
     background: rgba(0, 0, 0, 0.4);
     z-index: 15;
