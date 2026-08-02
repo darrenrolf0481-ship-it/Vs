@@ -1,0 +1,451 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 11.8%;
+    --foreground: 0 0% 80%;
+    --card: 0 0% 14.5%;
+    --card-foreground: 0 0% 80%;
+    --popover: 0 0% 14.5%;
+    --popover-foreground: 0 0% 80%;
+    --primary: 207 90% 40%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 17.6%;
+    --secondary-foreground: 0 0% 80%;
+    --muted: 0 0% 17.6%;
+    --muted-foreground: 0 0% 52%;
+    --accent: 0 0% 22.4%;
+    --accent-foreground: 0 0% 80%;
+    --destructive: 0 62% 70%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 23.5%;
+    --input: 0 0% 23.5%;
+    --ring: 207 90% 40%;
+    --radius: 0.25rem;
+
+    /* VS Code: Custom Tokens */
+    --vscode-bg: #1e1e1e;
+    --vscode-bg-secondary: #252526;
+    --vscode-bg-tertiary: #2d2d30;
+    --vscode-bg-active: #37373d;
+    --vscode-border: #3e3e42;
+    --vscode-border-active: #007acc;
+    --vscode-text: #cccccc;
+    --vscode-text-secondary: #858585;
+    --vscode-text-link: #4fc1ff;
+    --vscode-accent: #007acc;
+    --vscode-accent-green: #4ec9b0;
+    --vscode-accent-yellow: #cca700;
+    --vscode-accent-red: #f48771;
+    --vscode-titlebar: #3c3c3c;
+    --vscode-statusbar: #007acc;
+    --vscode-claude-purple: #d4a5ff;
+    --vscode-claude-purple-dim: #9b59b6;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  #root {
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+}
+
+@layer components {
+  .vscode-titlebar {
+    background: var(--vscode-titlebar);
+    color: #cccccc;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    font-size: 12px;
+    -webkit-app-region: drag;
+    user-select: none;
+  }
+
+  .vscode-activity-bar {
+    background: #333333;
+    width: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-top: 8px;
+    gap: 4px;
+  }
+
+  .vscode-sidebar {
+    background: var(--vscode-bg-secondary);
+    border-right: 1px solid var(--vscode-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .vscode-editor {
+    background: var(--vscode-bg);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .vscode-panel {
+    background: var(--vscode-bg-secondary);
+    border-top: 1px solid var(--vscode-border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .vscode-statusbar {
+    background: var(--vscode-accent);
+    color: white;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    font-size: 12px;
+  }
+
+  .vscode-tab {
+    background: #2d2d30;
+    color: #969696;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    border-right: 1px solid #252526;
+    white-space: nowrap;
+    transition: background 0.15s ease;
+  }
+
+  .vscode-tab:hover {
+    background: #2a2d2e;
+  }
+
+  .vscode-tab.active {
+    background: var(--vscode-bg);
+    color: var(--vscode-text);
+    border-top: 1px solid var(--vscode-accent);
+  }
+
+  .vscode-tree-item {
+    display: flex;
+    align-items: center;
+    padding: 3px 8px;
+    gap: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    color: var(--vscode-text);
+    transition: background 0.1s ease;
+  }
+
+  .vscode-tree-item:hover {
+    background: #2a2d2e;
+  }
+
+  .vscode-tree-item.active {
+    background: #37373d;
+  }
+
+  .vscode-input {
+    background: #3c3c3c;
+    border: 1px solid var(--vscode-border);
+    color: var(--vscode-text);
+    padding: 4px 8px;
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+  }
+
+  .vscode-input:focus {
+    border-color: var(--vscode-accent);
+  }
+
+  .vscode-button {
+    background: var(--vscode-accent);
+    color: white;
+    border: none;
+    padding: 4px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .vscode-button:hover {
+    background: #1177bb;
+  }
+
+  .vscode-button.secondary {
+    background: #3c3c3c;
+    border: 1px solid var(--vscode-border);
+  }
+
+  .vscode-button.secondary:hover {
+    background: #454545;
+  }
+
+  .context-menu {
+    background: var(--vscode-bg-secondary);
+    border: 1px solid var(--vscode-border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    min-width: 180px;
+    z-index: 1000;
+    position: fixed;
+  }
+
+  .context-menu-item {
+    padding: 5px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--vscode-text);
+  }
+
+  .context-menu-item:hover {
+    background: var(--vscode-accent);
+    color: white;
+  }
+
+  .context-menu-item.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+
+  .context-menu-separator {
+    height: 1px;
+    background: var(--vscode-border);
+    margin: 4px 0;
+  }
+
+  .dropdown-menu {
+    background: var(--vscode-bg-secondary);
+    border: 1px solid var(--vscode-border);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    min-width: 200px;
+    z-index: 1001;
+    position: fixed;
+  }
+
+  .dropdown-menu-item {
+    padding: 5px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--vscode-text);
+  }
+
+  .dropdown-menu-item:hover {
+    background: var(--vscode-accent);
+    color: white;
+  }
+
+  .dropdown-menu-shortcut {
+    color: var(--vscode-text-secondary);
+    font-size: 12px;
+  }
+
+  .dropdown-menu-item:hover .dropdown-menu-shortcut {
+    color: white;
+  }
+
+  .terminal-prompt {
+    color: #4ec9b0;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+  }
+
+  .terminal-output {
+    color: var(--vscode-text);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+
+  .terminal-error {
+    color: #f48771;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+  }
+
+  .claude-prompt {
+    color: var(--vscode-claude-purple);
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  .claude-output {
+    color: #e0d0f0;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+  }
+
+  .resize-handle-v {
+    width: 4px;
+    height: 100%;
+    cursor: col-resize;
+    background: transparent;
+    transition: background 0.15s ease;
+    pointer-events: none;
+  }
+
+  .resize-handle-h {
+    width: 100%;
+    height: 4px;
+    cursor: row-resize;
+    background: transparent;
+    transition: background 0.15s ease;
+    pointer-events: none;
+  }
+
+  /* The visible bar stays thin, but the actual touch/click target around it
+     is much wider — this is what makes dragging reliable with a finger.
+     touch-action: none stops the browser from scrolling/zooming while dragging. */
+  .resize-handle-v-hitarea {
+    width: 9px;
+    margin: 0 -4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: col-resize;
+    touch-action: none;
+    position: relative;
+    z-index: 5;
+  }
+
+  .resize-handle-h-hitarea {
+    height: 9px;
+    margin: -4px 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: row-resize;
+    touch-action: none;
+    position: relative;
+    z-index: 5;
+  }
+
+  @media (pointer: coarse) {
+    .resize-handle-v-hitarea {
+      width: 20px;
+      margin: 0 -9px;
+    }
+    .resize-handle-h-hitarea {
+      height: 20px;
+      margin: -9px 0;
+    }
+  }
+
+  .resize-handle-v-hitarea:hover .resize-handle-v,
+  .resize-handle-v-hitarea .resize-handle-active {
+    background: var(--vscode-accent);
+  }
+
+  .resize-handle-h-hitarea:hover .resize-handle-h,
+  .resize-handle-h-hitarea .resize-handle-active {
+    background: var(--vscode-accent);
+  }
+
+  .resize-handle-v-hitarea.resize-handle-active .resize-handle-v,
+  .resize-handle-h-hitarea.resize-handle-active .resize-handle-h {
+    background: var(--vscode-accent);
+  }
+
+  /* Mobile sidebar: slide-over drawer instead of a permanent inline pane */
+  .vscode-sidebar-mobile {
+    position: fixed;
+    top: 30px; /* below title bar */
+    bottom: 22px; /* above status bar */
+    left: 48px; /* right of activity bar */
+    width: min(80vw, 300px);
+    z-index: 20;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.5);
+    animation: sidebar-slide-in 0.18s ease-out;
+  }
+
+  @keyframes sidebar-slide-in {
+    from { transform: translateX(-16px); opacity: 0.6; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    top: 30px;
+    bottom: 22px;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 15;
+  }
+
+  .scrollbars::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .scrollbars::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbars::-webkit-scrollbar-thumb {
+    background: #424242;
+    border-radius: 5px;
+  }
+
+  .scrollbars::-webkit-scrollbar-thumb:hover {
+    background: #4f4f4f;
+  }
+
+  .scrollbars::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+@layer utilities {
+  .text-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+/* Monaco editor overrides */
+.monaco-editor {
+  padding-top: 4px !important;
+}
+
+/* Cursor blink animation */
+@keyframes blink {
+  0%, 70%, 100% { opacity: 1; }
+  20%, 50% { opacity: 0; }
+}
+
+.cursor-blink {
+  animation: blink 1.25s step-end infinite;
+}
