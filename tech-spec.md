@@ -51,10 +51,9 @@
 ### Terminal (custom-built)
 | Component | Notes |
 |-----------|-------|
-| TerminalPanel | Tabbed terminal container |
-| TerminalSession | Individual terminal instance |
-| TerminalInput | Input line with prompt |
-| ClaudeREPL | Claude Code mode overlay |
+| TerminalPanel | Tabbed container; toggles a session between shell and model |
+| ShellTerminal | Real shell process over WebSocket (node-pty, or child_process fallback) |
+| AiChat | Streaming chat against a local Ollama model — see OLLAMA.md |
 
 ### Shared Components
 | Component | Notes |
@@ -71,7 +70,7 @@
 | Tab open/close | CSS transition | 150ms opacity + transform | Low |
 | Sidebar toggle | CSS transition | 200ms width with content fade | Low |
 | Panel toggle | CSS transition | 200ms height slide | Low |
-| Claude stream | Custom setInterval | Character-by-character, 15ms delay | Medium |
+| Model reply | None — real streaming | Tokens rendered as the model emits them | Low |
 | Tool call expand | CSS transition | 200ms max-height + opacity | Low |
 | Context menu | CSS transition | 100ms scale + opacity | Low |
 | Activity bar indicator | CSS transition | 150ms transform slide | Low |
@@ -89,7 +88,7 @@ Single store splitting into logical slices:
 **UISlice**: sidebarVisible, sidebarView, sidebarWidth, panelVisible, panelHeight, theme
 **EditorSlice**: tabs, activeTab, cursorPositions, scrollPositions
 **FileSlice**: fileTree (tree in memory, synced to IndexedDB)
-**TerminalSlice**: sessions, activeSession, history, claudeMode, claudeMessages
+**TerminalSlice**: sessions, activeSession, history, claudeMode (shell vs. model view)
 **GitSlice**: changes, staged, branch
 **ExtensionSlice**: installed, marketplace
 
@@ -97,7 +96,7 @@ Single store splitting into logical slices:
 1. **File operations** → update tree in Zustand → sync to IndexedDB (debounced 500ms)
 2. **Editor changes** → Monaco onChange → update tab modified state → sync to IndexedDB
 3. **Terminal commands** → parse → execute against virtual FS → render output
-4. **Claude REPL** → capture input → stream simulated response → append to messages
+4. **Model chat** → POST to the backend → backend streams from Ollama → tokens appended as they arrive
 5. **Git operations** → read file tree changes → calculate diffs → display in SCM
 
 ### Monaco Integration
@@ -115,14 +114,19 @@ Single store splitting into logical slices:
 - 15 built-in commands with real file system effects
 - Tab completion: prefix match against current directory entries
 - History: circular buffer, persisted to IndexedDB
-- Claude mode: state flag switches prompt, parser, and renderer
+- Model mode: a per-session flag swaps the shell view for the chat view
 
-### Claude REPL Simulation
-- Streaming: setInterval adding chars one-by-one, clear on interrupt
-- Slash commands: /help, /clear, /exit, /model, /tools
-- Tool calls: expandable blocks with spinner → checkmark animation
-- Pre-written response templates for common queries
-- Response selection based on keyword matching
+### Local model chat
+Replaces the scripted REPL that used to live here, which matched keywords
+against pre-written strings and streamed them a character at a time to imitate
+thinking. Nothing about it was real.
+
+- Backend proxies a local [Ollama](https://ollama.com) server (`server/routes/ollama.js`)
+- Newline-delimited JSON streamed straight through, so tokens appear as generated
+- Disconnecting aborts generation upstream instead of just hiding output
+- History is windowed (`OLLAMA_HISTORY`) — replaying a whole conversation is
+  what makes a local model crawl after a dozen turns
+- See OLLAMA.md for setup and sizing
 
 ### IndexedDB Sync
 - localforage for simple key-value operations
@@ -148,7 +152,7 @@ buys full offline operation.
 Flat storage in IndexedDB with path keys. Tree reconstructed on load. Supports: create, read, update, delete, rename, move, list directory.
 
 ### Terminal Implementation
-Custom React component (not xterm.js) for tighter integration with Zustand and Claude REPL mode. Uses a contentEditable div or input with ref forwarding for focus management.
+Custom React component (not xterm.js) for tighter integration with Zustand and the model-chat view. Uses a contentEditable div or input with ref forwarding for focus management.
 
 ### No Service Worker
 Single-page app without offline service worker. IndexedDB provides persistence within the browser.

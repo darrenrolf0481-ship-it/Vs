@@ -28,15 +28,56 @@ fake.get('/api/tags', (req, res) => {
   });
 });
 
+/**
+ * Generations we were told to stop part-way through — meaning the proxy
+ * propagated a client disconnect upstream instead of swallowing it. On a phone
+ * that propagation is the difference between pressing Stop and actually
+ * freeing the CPU, versus just hiding output while the model keeps burning
+ * battery.
+ */
+let abandonedGenerations = 0;
+
+/**
+ * Disconnects that reached us while we were still thinking — before a single
+ * byte of response had been written. Cancelling the response stream cannot
+ * cover this window, because there is no stream yet; only aborting the
+ * in-flight request does. On a real model this window is the slowest part of
+ * a turn (prompt evaluation), so it is precisely when a user gives up.
+ */
+let abandonedBeforeFirstByte = 0;
+
 fake.post('/api/chat', (req, res) => {
   if (req.body.model === 'missing-model') {
     return res.status(404).json({ error: 'model not found' });
   }
+
+  // 'slow-start-model' sits silent for 2s before answering, standing in for
+  // prompt evaluation on a phone.
+  if (req.body.model === 'slow-start-model') {
+    let answered = false;
+    const timer = setTimeout(() => {
+      answered = true;
+      res.setHeader('Content-Type', 'application/x-ndjson');
+      res.write(JSON.stringify({ message: { role: 'assistant', content: 'late' }, done: true }) + '\n');
+      res.end();
+    }, 2000);
+    res.on('close', () => {
+      clearTimeout(timer);
+      if (!answered) abandonedBeforeFirstByte++;
+    });
+    return;
+  }
+
   res.setHeader('Content-Type', 'application/x-ndjson');
+
+  // 'endless-model' never finishes, so a test can abort mid-generation.
+  const endless = req.body.model === 'endless-model';
   const words = ['Here', ' is', ' a', ' streamed', ' reply.'];
   let i = 0;
   const t = setInterval(() => {
-    if (i < words.length) {
+    if (endless) {
+      res.write(JSON.stringify({ message: { role: 'assistant', content: 'tok ' }, done: false }) + '\n');
+    } else if (i < words.length) {
       res.write(JSON.stringify({ message: { role: 'assistant', content: words[i++] }, done: false }) + '\n');
     } else {
       clearInterval(t);
@@ -44,6 +85,13 @@ fake.post('/api/chat', (req, res) => {
       res.end();
     }
   }, 10);
+
+  res.on('close', () => {
+    clearInterval(t);
+    // A stream we finished ourselves has writableEnded set; one cut short
+    // from the other end does not.
+    if (!res.writableEnded) abandonedGenerations++;
+  });
 });
 
 const fakeServer = http.createServer(fake);
@@ -115,6 +163,10 @@ function check(label, condition, detail) {
   check('stream reassembles full text', assembled === 'Here is a streamed reply.', assembled);
   check('stream delivers a done record', sawDone === true);
   check('stream arrives incrementally, not buffered', chunkCount > 1, `chunks=${chunkCount}`);
+  // The abort hook listens on the response, not the request. Listening on the
+  // request would fire as soon as Express finished reading the body and kill
+  // every healthy generation the instant it began.
+  check('a completed stream is not treated as abandoned', abandonedGenerations === 0, abandonedGenerations);
 }
 
 // 3. unknown model -> helpful 502 with a pull hint
@@ -146,7 +198,69 @@ function check(label, condition, detail) {
   check('empty messages rejected with 400', b.status === 400, b.status);
 }
 
-// 5. ollama down -> graceful, non-throwing status
+// 5. a client hanging up mid-stream must stop the generation upstream
+{
+  const before = abandonedGenerations;
+  const controller = new AbortController();
+
+  const res = await fetch(`${base}/api/ollama/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'endless-model', messages: [{ role: 'user', content: 'hi' }] }),
+    signal: controller.signal,
+  });
+  check('endless generation starts streaming', res.status === 200, res.status);
+
+  const reader = res.body.getReader();
+  await reader.read(); // one token proves generation is genuinely under way
+  controller.abort();  // the browser tab going away, or Stop being pressed
+
+  // The disconnect has to travel client -> proxy -> fake Ollama, so poll
+  // rather than assuming it has landed by the time abort() returns.
+  const deadline = Date.now() + 4000;
+  while (abandonedGenerations === before && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  check(
+    'client disconnect aborts the generation upstream',
+    abandonedGenerations === before + 1,
+    `abandoned delta=${abandonedGenerations - before}`
+  );
+}
+
+// 6. hanging up before the first token must abort the in-flight request
+//    upstream. Breaking out of the response stream cannot do this — there is
+//    no stream yet — so this is what the AbortController is actually for.
+{
+  const before = abandonedBeforeFirstByte;
+  const controller = new AbortController();
+
+  // Abort rejects this promise; the rejection is the expected outcome.
+  const pending = fetch(`${base}/api/ollama/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model: 'slow-start-model', messages: [{ role: 'user', content: 'hi' }] }),
+    signal: controller.signal,
+  }).catch(() => {});
+
+  await new Promise((r) => setTimeout(r, 150)); // let it reach the fake
+  controller.abort();
+
+  // Deliberately well under the fake's 2s think time: if the disconnect only
+  // lands once the fake answers on its own, that is not propagation.
+  const deadline = Date.now() + 1200;
+  while (abandonedBeforeFirstByte === before && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 25));
+  }
+  check(
+    'hanging up before the first token aborts the upstream request',
+    abandonedBeforeFirstByte === before + 1,
+    `delta=${abandonedBeforeFirstByte - before}`
+  );
+  await pending;
+}
+
+// 7. ollama down -> graceful, non-throwing status
 {
   // close() alone leaves keep-alive sockets in undici's pool, and a request
   // reusing one hangs instead of refusing. Destroy them too.

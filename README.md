@@ -80,6 +80,18 @@ VITE_SERVER_URL=http://127.0.0.1:4001
 
 ---
 
+## Asking a local model
+
+The bottom panel has a Bot button that swaps a session from the shell to a chat
+against a model running on this device, via [Ollama](https://ollama.com).
+Nothing leaves the phone.
+
+It's optional — if Ollama isn't running, the panel says so and everything else
+works unchanged. Setup, model sizing (the part that decides whether this is
+usable at all on a phone), and troubleshooting are in **[OLLAMA.md](OLLAMA.md)**.
+
+---
+
 ## Terminal: two modes
 
 The backend spawns a real shell either way, but there are two levels of fidelity.

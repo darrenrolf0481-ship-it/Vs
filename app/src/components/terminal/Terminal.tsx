@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAppStore } from '@/store';
 import { X, Plus, Bot, Terminal as TerminalIcon, ChevronUp, ChevronDown } from 'lucide-react';
 import { ShellTerminal } from './ShellTerminal';
+import { AiChat } from './AiChat';
 
 /**
  * The bottom panel: terminal tabs plus Problems/Output/Debug Console views.
@@ -21,6 +22,7 @@ export function TerminalPanel() {
     closeTerminal,
     panelMaximized,
     togglePanelMaximize,
+    toggleClaudeMode,
   } = useAppStore();
 
   const [activeTab, setActiveTab] = useState<'terminal' | 'problems' | 'output' | 'debug-console'>('terminal');
@@ -98,6 +100,24 @@ export function TerminalPanel() {
           ))}
 
           <button
+            onClick={() => activeSession && toggleClaudeMode(activeSession.id)}
+            title={activeSession?.claudeMode ? 'Back to shell' : 'Ask a local model'}
+            disabled={!activeSession}
+            style={{
+              background: activeSession?.claudeMode ? '#3c2a4d' : 'transparent',
+              border: 'none',
+              color: activeSession?.claudeMode ? '#d4a5ff' : '#858585',
+              cursor: activeSession ? 'pointer' : 'default',
+              padding: '2px 6px',
+              borderRadius: 3,
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            <Bot size={14} />
+          </button>
+
+          <button
             onClick={createTerminalSession}
             title="New Terminal"
             style={{
@@ -129,9 +149,13 @@ export function TerminalPanel() {
         </div>
       </div>
 
-      {/* Terminal Content — a REAL shell process on the backend */}
+      {/* Terminal Content — a REAL shell process, or a REAL local model.
+          Both sides of this toggle talk to something that actually exists;
+          neither is a simulation. */}
       {activeTab === 'terminal' && activeSession && (
-        <ShellTerminal key={activeSession.id} sessionKey={activeSession.id} />
+        activeSession.claudeMode
+          ? <AiChat key={`ai-${activeSession.id}`} />
+          : <ShellTerminal key={activeSession.id} sessionKey={activeSession.id} />
       )}
 
       {activeTab === 'problems' && (

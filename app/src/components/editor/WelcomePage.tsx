@@ -42,8 +42,8 @@ export function WelcomePage() {
     },
     {
       icon: Sparkles,
-      title: 'Claude Code REPL',
-      description: 'Type "claude" in the terminal to start an AI coding session.',
+      title: 'Local AI chat',
+      description: 'Press the Bot icon in the panel to ask a model running on this device.',
       action: () => {
         createTerminalSession();
         togglePanel();

@@ -6,6 +6,7 @@ import cors from 'cors';
 
 import { initWorkspaceRoot, getWorkspaceRoot, PathError } from './lib/safe-path.js';
 import filesRouter from './routes/files.js';
+import ollamaRouter, { OLLAMA_URL } from './routes/ollama.js';
 import { attachTerminalServer, getTerminalBackend, getPtyLoadError } from './lib/terminal.js';
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
@@ -31,10 +32,12 @@ app.get('/api/health', (req, res) => {
     workspace: getWorkspaceRoot(),
     terminalBackend: getTerminalBackend(),
     ptyLoadError: getPtyLoadError(),
+    ollamaUrl: OLLAMA_URL,
   });
 });
 
 app.use('/api/files', filesRouter);
+app.use('/api/ollama', ollamaRouter);
 
 // Central error handler — keeps internal paths and stack traces out of responses
 app.use((err, req, res, _next) => {
@@ -58,6 +61,7 @@ async function main() {
     console.log(`  URL:       http://${HOST}:${PORT}`);
     console.log(`  Workspace: ${root}`);
     console.log(`  Terminal:  ${backend}`);
+    console.log(`  Ollama:    ${OLLAMA_URL}`);
     if (backend === 'child_process') {
       console.log('             (node-pty unavailable — using fallback shell.');
       console.log('              Commands work; full-screen TUI apps like vim will not.)');
