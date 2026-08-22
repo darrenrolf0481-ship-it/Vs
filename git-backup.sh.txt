@@ -1,0 +1,48 @@
+#!/bin/bash
+# VS Code Web - Ephemeral Workspace Git Backup Script
+set -e
+
+WORKSPACE_DIR="/app/workspace"
+BACKUP_BRANCH="workspace-backup"
+
+echo "=== Starting Automated Workspace Backup ==="
+cd "$WORKSPACE_DIR"
+
+# Ensure Git is initialized in the workspace
+if [ ! -d ".git" ]; then
+    echo "Initializing Git repository in $WORKSPACE_DIR..."
+    git init
+    git checkout -b "$BACKUP_BRANCH"
+fi
+
+# Configure local git identifiers to prevent push failures
+git config user.name "Hugging Face Space Developer"
+git config user.email "dev@huggingface.co"
+
+# Add modifications
+git add .
+
+# Check if there are any changes staged
+if git diff --cached --quiet; then
+    echo "No modifications detected in workspace. Backup skipped."
+    exit 0
+fi
+
+# Commit with automated timestamp
+TIMESTAMP=$(date "+%Y-%m-%d %H:%M:%S")
+echo "Staging changes and creating commit..."
+git commit -m "Automated Workspace Backup: $TIMESTAMP"
+
+# Attempt to push to the configured remote
+if git remote | grep -q "origin"; then
+    echo "Pushing changes to remote repository..."
+    if git push origin "$BACKUP_BRANCH" --force; then
+        echo "=== Backup Successfully Completed! ==="
+    else
+        echo "Error: Git push failed. Please verify your Access Token permissions or SSH keys."
+        exit 1
+    fi
+else
+    echo "Error: No remote 'origin' configured. Run setup steps from GIT-BACKUP-GUIDE.md."
+    exit 1
+fi

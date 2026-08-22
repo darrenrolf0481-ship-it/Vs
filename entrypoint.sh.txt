@@ -1,0 +1,58 @@
+#!/bin/bash
+set -e
+
+echo "=== Starting Ollama Local Inference Engine ==="
+ollama serve > /app/ollama.log 2>&1 &
+
+echo "Waiting for Ollama service to start..."
+until curl -s http://127.0.0.1:11434/api/tags >/dev/null; do
+    sleep 2
+done
+echo "Ollama is ready!"
+
+# Pull qwen2.5-coder:1.5b (high performance coding model, 1.2GB memory footprint)
+MODEL_NAME="qwen2.5-coder:1.5b"
+echo "=== Pulling Local AI Model ($MODEL_NAME) ==="
+ollama pull "$MODEL_NAME"
+echo "Model $MODEL_NAME successfully loaded!"
+
+echo "=== Preparing VS Code Web Frontend Configuration ==="
+# Map the client's VITE environment to relative root
+echo "VITE_SERVER_URL=/" > /app/app/.env.local
+echo "VITE_OLLAMA_MODEL=$MODEL_NAME" >> /app/app/.env.local
+
+# Patch Vite config to proxy /api and websockets (/socket.io) to the Node backend
+cat << 'EOF' > /app/app/vite.config.ts
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: '0.0.0.0',
+    port: 7860, // Hugging Face Spaces default public port
+    strictPort: true,
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/socket.io': {
+        target: 'http://127.0.0.1:3001',
+        changeOrigin: true,
+        ws: true,
+        secure: false,
+      }
+    }
+  }
+})
+EOF
+
+echo "=== Starting Node.js Backend Server (Port 3001) ==="
+cd /app/server
+npm start > /app/backend.log 2>&1 &
+
+echo "=== Starting VS Code Web Frontend Server (Port 7860) ==="
+cd /app/app
+npm run dev

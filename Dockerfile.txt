@@ -1,0 +1,47 @@
+# Dockerfile for Hugging Face Space
+
+FROM node:20-bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    bash \
+    curl \
+    wget \
+    procps \
+    git \
+    git-lfs \
+    htop \
+    vim \
+    nano \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://ollama.com/install.sh | sh
+
+RUN useradd -m -u 1000 user
+ENV HOME=/home/user
+ENV PATH=/home/user/.local/bin:$PATH
+
+WORKDIR /app
+RUN chown -R 1000:1000 /app
+
+USER user
+
+RUN git clone https://github.com/darrenrolf0481-ship-it/Vs.git .
+
+RUN cd server && npm install
+RUN cd app && npm install
+
+COPY --chown=user:user entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
+EXPOSE 7860
+
+ENV PORT=3001
+ENV WORKSPACE=/app/workspace
+ENV OLLAMA_HOST=127.0.0.1:11434
+
+RUN mkdir -p /app/workspace
+
+CMD ["/bin/bash", "/app/entrypoint.sh"]
